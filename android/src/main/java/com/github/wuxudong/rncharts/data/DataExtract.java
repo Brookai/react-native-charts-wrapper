@@ -10,6 +10,8 @@ import com.github.mikephil.charting.interfaces.datasets.IDataSet;
 import com.github.wuxudong.rncharts.utils.BridgeUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Created by xudong on 02/03/2017.
@@ -68,6 +70,15 @@ public abstract class DataExtract<D extends ChartData, U extends Entry> {
                 entries.add(createEntry(yValues, j));
             }
         }
+        
+        // Sort entries by X value to prevent NegativeArraySizeException in MPAndroidChart
+        Collections.sort(entries, new Comparator<U>() {
+            @Override
+            public int compare(U e1, U e2) {
+                return Float.compare(e1.getX(), e2.getX());
+            }
+        });
+        
         return entries;
     }
 
