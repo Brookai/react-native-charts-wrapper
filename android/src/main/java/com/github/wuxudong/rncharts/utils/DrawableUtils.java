@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import android.util.Base64;
+import android.content.res.AssetManager;
 
 public class DrawableUtils {
     public static Drawable drawableFromUrl(String url, final int width, final int height) {
@@ -27,25 +29,41 @@ public class DrawableUtils {
     static class DrawableLoadingAsyncTask extends AsyncTask<String, Void, Drawable> {
         @Override
         protected Drawable doInBackground(String... strings) {
-            try {
-                Bitmap x;
-
-                int width = Integer.parseInt(strings[1]);
-                int height = Integer.parseInt(strings[2]);
-
-                HttpURLConnection connection = (HttpURLConnection) new URL(strings[0]).openConnection();
+        try {
+            Bitmap x;
+            int width = Integer.parseInt(strings[1]);
+            int height = Integer.parseInt(strings[2]);
+            
+            String urlString = strings[0];
+            
+            // Handle data URLs
+            if (urlString.startsWith("data:")) {
+                String base64 = urlString.substring(urlString.indexOf(",") + 1);
+                byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
+                x = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            }
+            // Handle file URLs
+            else if (urlString.startsWith("file://")) {
+                x = BitmapFactory.decodeFile(urlString.replace("file://", ""));
+            }
+            // Handle HTTP URLs
+            else {
+                HttpURLConnection connection = (HttpURLConnection) new URL(urlString).openConnection();
                 connection.connect();
                 InputStream input = connection.getInputStream();
-
                 x = BitmapFactory.decodeStream(input);
-
-                return new BitmapDrawable(Resources.getSystem(), Bitmap.createScaledBitmap(x, width, height, true));
-
-            } catch(IOException e) {
-                e.printStackTrace();
-                // draw dummy drawable when connection fail
-                return new ShapeDrawable();
             }
+            
+            return new BitmapDrawable(Resources.getSystem(), Bitmap.createScaledBitmap(x, width, height, true));
+        } catch(Exception e) {
+            e.printStackTrace();
+            return new ShapeDrawable();
+        }
+    }
+
+        @Override
+        protected void onPostExecute(Drawable drawable) {
+            super.onPostExecute(drawable);
         }
     };
 }
